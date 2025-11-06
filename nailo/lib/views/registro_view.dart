@@ -1,75 +1,99 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:nailo/controllers/auth_controller.dart'; // Seu AuthController
+import 'package:nailo/controllers/auth_controller.dart';
 import 'package:nailo/views/widgets/auth_background.dart';
-import 'package:nailo/widgets/auth_background.dart'; // O widget de background
 
 class RegistroView extends StatelessWidget {
   const RegistroView({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Pegar a instância do AuthController que já foi injetada no main.dart
     final AuthController authController = Get.find<AuthController>();
 
     return AuthBackground(
-      title: 'Cadastro', // Título para o card
+      title: 'Cadastro',
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextField(
-            controller: authController.emailController, // Reutiliza o controller de email
-            decoration: InputDecoration(
+            controller: authController.emailController,
+            decoration: const InputDecoration(
               labelText: 'Email',
               border: OutlineInputBorder(),
             ),
             keyboardType: TextInputType.emailAddress,
           ),
-          SizedBox(height: 15),
+          const SizedBox(height: 15),
           TextField(
-            controller: authController.phoneController, // NOVO: Controller para Telefone
-            decoration: InputDecoration(
+            controller: authController.phoneController,
+            decoration: const InputDecoration(
               labelText: 'Telefone',
               border: OutlineInputBorder(),
             ),
             keyboardType: TextInputType.phone,
           ),
-          SizedBox(height: 15),
+          const SizedBox(height: 15),
           TextField(
-            controller: authController.passwordController, // Reutiliza o controller de senha
-            decoration: InputDecoration(
+            controller: authController.passwordController,
+            decoration: const InputDecoration(
               labelText: 'Senha',
               border: OutlineInputBorder(),
             ),
             obscureText: true,
           ),
-          SizedBox(height: 15),
+          const SizedBox(height: 15),
           TextField(
-            controller: authController.confirmPasswordController, // NOVO: Controller para confirmar senha
-            decoration: InputDecoration(
-              labelText: 'Confirmar senha',
+            controller: authController.confirmPasswordController,
+            decoration: const InputDecoration(
+              labelText: 'Confirmar Senha',
               border: OutlineInputBorder(),
             ),
             obscureText: true,
           ),
-          SizedBox(height: 20),
-          Obx(() => ElevatedButton(
-            onPressed: authController.isLoading.value
-                ? null // Desabilita o botão enquanto carrega
-                : () => authController.registerUser(), // Chama a função de registro
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFF5DD9C2), // Cor do botão
-              minimumSize: Size(double.infinity, 50), // Botão de largura total
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+          const SizedBox(height: 20),
+
+          // 🔹 Obx deve envolver apenas o botão que depende de observáveis
+          Obx(() {
+            final isLoading = authController.isLoading.value;
+
+            return ElevatedButton(
+              onPressed: isLoading
+                  ? null
+                  : () => authController.registerUser(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF5DD9C2),
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text(
+                      'Cadastrar',
+                      style: TextStyle(fontSize: 18, color: Colors.white),
+                    ),
+            );
+          }),
+          const SizedBox(height: 20),
+          TextButton(
+            onPressed: () => Get.back(), // volta pra tela de login
+            child: const Text.rich(
+              TextSpan(
+                text: 'Já possui uma conta? ',
+                style: TextStyle(color: Colors.black87),
+                children: [
+                  TextSpan(
+                    text: 'Entrar',
+                    style: TextStyle(
+                      color: Color(0xFF5DD9C2),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: authController.isLoading.value
-                ? CircularProgressIndicator(color: Colors.white) // Loading
-                : Text(
-                    'Cadastrar',
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
-          )),
+          ),
         ],
       ),
     );

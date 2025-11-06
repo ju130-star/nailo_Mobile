@@ -1,10 +1,10 @@
-// Este modelo representa um item da sua lista de "Agendamentos"
 class AgendamentoModel {
   final String id;
   final String servico;
   final String profissionalNome;
   final DateTime dataHora;
   final String local;
+  final String status; // <-- NOVO CAMPO (ex: 'agendado', 'concluido', 'cancelado')
 
   AgendamentoModel({
     required this.id,
@@ -12,16 +12,17 @@ class AgendamentoModel {
     required this.profissionalNome,
     required this.dataHora,
     required this.local,
+    required this.status, // <-- Adicionado
   });
 
-  // Você também teria aqui métodos fromJson/toJson para a API
   factory AgendamentoModel.fromJson(Map<String, dynamic> json) {
     return AgendamentoModel(
-      id: json['id'],
-      servico: json['servico'],
-      profissionalNome: json['profissionalNome'],
-      dataHora: DateTime.parse(json['dataHora']),
-      local: json['local'],
+      id: json['id'] as String,
+      servico: json['servico'] as String,
+      profissionalNome: json['profissionalNome'] as String,
+      dataHora: DateTime.parse(json['dataHora'] as String),
+      local: json['local'] as String,
+      status: json['status'] as String, // <-- Adicionado
     );
   }
 }

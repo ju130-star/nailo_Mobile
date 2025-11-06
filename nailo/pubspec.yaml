@@ -25,6 +25,7 @@ dependencies:
   flutter_local_notifications: ^17.1.2
   http: ^1.2.2
   intl: ^0.20.2
+  table_calendar: ^3.0.9
   get: ^4.6.6
   image_picker: ^1.1.2
   permission_handler: ^11.3.1

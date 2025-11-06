@@ -1,121 +1,120 @@
 import 'package:get/get.dart';
-import 'package:flutter/material.dart'; // Necessário para o AlertDialog
+import 'package:flutter/material.dart';
 
-// Importe seus modelos e serviços
+// Modelos
 import 'package:nailo/models/agendamento_model.dart';
 import 'package:nailo/models/profissional_model.dart';
-import 'package:nailo/services/api_service.dart';// Seu serviço de API
-import 'package:nailo/controllers/auth_controller.dart';// Para pegar o usuário logado
+
+// Serviços e Controllers
+import 'package:nailo/services/api_service.dart';
+import 'package:nailo/controllers/auth_controller.dart';
 
 class UserHomeController extends GetxController {
-  
-  // --- 1. DEPENDÊNCIAS E VARIÁVEIS (NO TOPO DA CLASSE) ---
-  
-  // Dependências (supondo que já foram injetadas no Get)
-  final ApiService _api = Get.find<ApiService>();
-  final AuthController _auth = Get.find<AuthController>();
+  // --- DEPENDÊNCIAS ---
+  final AuthController authController = Get.find<AuthController>();
+  final ApiService apiService = Get.find<ApiService>();
 
-  // --- ESTADO OBSERVÁVEL (Dados que a View vai "ouvir") ---
+  // --- ESTADO OBSERVÁVEL ---
   var isLoading = false.obs;
   var userName = 'Cliente'.obs;
-  var agendamentos = <AgendamentoModel>[].obs; // Lista reativa de agendamentos
-  var profissionais = <ProfissionalModel>[].obs; // Lista reativa de profissionais
+  var agendamentos = <AgendamentoModel>[].obs;
+  var profissionaisProximos = <ProfissionalModel>[].obs;
 
-  // --- 2. CICLO DE VIDA (MÉTODO) ---
+  // --- CICLO DE VIDA ---
   @override
   void onInit() {
     super.onInit();
-    fetchHomeData(); // Busca os dados assim que o controller é criado
+    fetchInitialData(); // Carrega dados ao iniciar
   }
 
-  // --- 3. LÓGICA / AÇÕES (TODOS OS MÉTODOS AQUI) ---
-
-  // 1. Busca todos os dados da tela
-  Future<void> fetchHomeData() async {
+  // --- MÉTODO PRINCIPAL DE CARGA INICIAL ---
+  Future<void> fetchInitialData() async {
     try {
       isLoading(true);
-      // Pega o nome do usuário logado
-      // (Certifique-se que seu AuthController tem uma variável 'user' ou 'userLogado')
-      userName.value = _auth.userLogado.value?.nome ?? 'Cliente'; 
 
-      // Busca os dados da API em paralelo
-      final [agendamentosDaApi, profissionaisDaApi] = await Future.wait([
-        _api.getMeusAgendamentos(_auth.userLogado.value!.id), // Use o ID do usuário logado
-        _api.getProfissionais(),
+      final user = authController.userLogado.value;
+      if (user == null) throw Exception('Usuário não logado');
+
+      userName.value = user.nome;
+
+      // Carrega os dados da API simultaneamente
+      final results = await Future.wait([
+        apiService.getMeusAgendamentos(user.id),
+        apiService.getProfissionais(),
       ]);
 
-      // Atualiza as listas reativas
-      agendamentos.assignAll(agendamentosDaApi as Iterable<AgendamentoModel>);
-      profissionais.assignAll(profissionaisDaApi as Iterable<ProfissionalModel>);
-
+      agendamentos.assignAll(results[0] as List<AgendamentoModel>);
+      profissionaisProximos.assignAll(results[1] as List<ProfissionalModel>);
     } catch (e) {
-      Get.snackbar('Erro', 'Não foi possível carregar os dados: $e');
+      Get.snackbar(
+        'Erro ao Carregar',
+        'Não foi possível carregar os dados da Home: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } finally {
       isLoading(false);
     }
   }
 
-  // 2. Ação para o botão "+"
-  void onAddAgendamentoPressed() {
-    Get.toNamed('/user_novo_agendamento'); // Navega para a tela de criar agendamento
-  }
-  
-  // 3. Ação para clicar em um profissional
-  void onProfissionalTap(ProfissionalModel profissional) {
-    Get.toNamed('/detalhes_profissional', arguments: profissional.id);
+  // --- AÇÕES DO USUÁRIO ---
+
+  void onAgendamentoTap(AgendamentoModel agendamento) {
+    Get.toNamed('/detalhes_agendamento', arguments: agendamento.id);
   }
 
-  // 4. Ação para mostrar o dialog de cancelamento (LÓGICA DE UI)
   void showCancelConfirmationDialog(AgendamentoModel agendamento) {
     Get.dialog(
       AlertDialog(
-        title: Text('Deseja cancelar seu agendamento?'),
+        title: const Text('Deseja cancelar seu agendamento?'),
         content: Text('${agendamento.servico} com ${agendamento.profissionalNome}'),
         actions: [
           TextButton(
-            onPressed: () => Get.back(), // Fecha o dialog
-            child: Text('NÃO'),
+            onPressed: () => Get.back(),
+            child: const Text('NÃO'),
           ),
           ElevatedButton(
             onPressed: () {
-              Get.back(); // Fecha o dialog
-              _cancelarAgendamento(agendamento.id); // Chama a lógica interna
+              Get.back();
+              _cancelarAgendamento(agendamento.id);
             },
-            child: Text('SIM'),
+            child: const Text('SIM'),
           ),
         ],
       ),
     );
   }
 
-  // 5. Lógica interna de cancelamento (LÓGICA DE DADOS)
   Future<void> _cancelarAgendamento(String agendamentoId) async {
     try {
-      Get.dialog(Center(child: CircularProgressIndicator()), barrierDismissible: false);
-      
-      // Chama a API para cancelar
-      await _api.cancelarAgendamento(agendamentoId);
-      
-      // Remove o item da lista reativa (a UI vai atualizar sozinha)
-      agendamentos.removeWhere((ag) => ag.id == agendamentoId);
+      Get.dialog(
+        const Center(child: CircularProgressIndicator()),
+        barrierDismissible: false,
+      );
+
+      await apiService.cancelarAgendamento(agendamentoId);
+      agendamentos.removeWhere((a) => a.id == agendamentoId);
 
       Get.back(); // Fecha o loading
-      Get.snackbar('Sucesso', 'Agendamento cancelado.');
-      
+      Get.snackbar(
+        'Sucesso!',
+        'Agendamento cancelado com sucesso.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } catch (e) {
-      Get.back(); // Fecha o loading
-      Get.snackbar('Erro', 'Não foi possível cancelar o agendamento: $e');
+      Get.back();
+      Get.snackbar(
+        'Erro',
+        'Erro ao cancelar agendamento: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
-  // 6. MÉTODO DE CLIQUE DO AGENDAMENTO (NO LOCAL CORRETO)
-  void onAgendamentoTap(AgendamentoModel agendamento) {
-    print('Usuário clicou no agendamento ID: ${agendamento.id}');
-    
-    // Ação: Navegar para a tela de detalhes
-    Get.toNamed(
-      '/detalhes_agendamento', 
-      arguments: agendamento.id // Envia o ID do agendamento para a próxima tela
-    );
+  void onProfissionalTap(ProfissionalModel profissional) {
+    Get.toNamed('/detalhes_profissional', arguments: profissional.id);
+  }
+
+  void onAddAgendamentoPressed() {
+    Get.toNamed('/user_novo_agendamento');
   }
 }

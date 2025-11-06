@@ -3,12 +3,14 @@ class UserModel {
   final String nome;
   final String email;
   final String tipo; // 'user' ou 'proprietario'
+  final String? telefone;
 
   UserModel({
     required this.id,
     required this.nome,
     required this.email,
     required this.tipo,
+    this.telefone,
   });
 
   // Converte um JSON (vindo da API) para este modelo
@@ -18,6 +20,7 @@ class UserModel {
       nome: json['nome'] as String,
       email: json['email'] as String,
       tipo: json['tipo'] as String,
+      telefone: json['telefone'] as String?,
     );
   }
 
@@ -28,6 +31,7 @@ class UserModel {
       'nome': nome,
       'email': email,
       'tipo': tipo,
+      'telefone': telefone,
     };
   }
 }

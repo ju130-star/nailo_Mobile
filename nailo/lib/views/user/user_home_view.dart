@@ -5,8 +5,8 @@ import 'package:intl/date_symbol_data_local.dart'; // <-- ADICIONE ESTA LINHA
 
 // Importe o Controller e os NOVOS WIDGETS
 import 'package:nailo/controllers/user/user_home_controller.dart';
-import 'package:nailo/widgets/agendamento_card.dart';
-import 'package:nailo/widgets/profissional_avatar.dart';
+import 'package:nailo/views/widgets/agendamento_card.dart';
+import 'package:nailo/views/widgets/profissional_avatar.dart';
 
 class UserHomeView extends StatelessWidget {
   const UserHomeView({Key? key}) : super(key: key);
