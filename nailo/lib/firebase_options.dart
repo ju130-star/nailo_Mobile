@@ -60,4 +60,5 @@ class DefaultFirebaseOptions {
     databaseURL: 'https://nailo-mobile-default-rtdb.firebaseio.com',
     storageBucket: 'nailo-mobile.firebasestorage.app',
   );
+
 }
